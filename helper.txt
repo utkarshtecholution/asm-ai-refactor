@@ -1,0 +1,2 @@
+Assumptions:
+1. We will be having only one cam for each workstation

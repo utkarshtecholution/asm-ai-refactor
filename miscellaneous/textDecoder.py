@@ -868,9 +868,3 @@ class TextDecoder:
 
         self.clear_previous_outputs()
         return restructured_output
-    
-
-
-    
-
-

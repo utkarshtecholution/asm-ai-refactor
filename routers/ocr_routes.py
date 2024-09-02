@@ -1,4 +1,3 @@
-import threading
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from services.camera_stream_configurator import CameraStreamConfigurator

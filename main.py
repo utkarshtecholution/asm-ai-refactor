@@ -24,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#Routers
 app.router.include_router(ocr_routes.router)
 
 if __name__ == "__main__":

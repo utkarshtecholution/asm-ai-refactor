@@ -23,3 +23,5 @@ class EntryPoint:
                 )
         finally:
             sys.exit()
+
+        # initiating camera

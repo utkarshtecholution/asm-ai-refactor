@@ -11,11 +11,12 @@ def consumer():
     while True:
         new_item_event.wait()  # Wait until the event is set
         while not frame_queue.empty():
-            document = frame_queue.get()
-            print(f"Consumed: {document}")
-            time.sleep(1)
+            frame = frame_queue.get()
+            
+
+            print("consumed...")
             frame_queue.task_done()
         new_item_event.clear()  # Clear the event when queue is empty
 
-consumer_thread = threading.Thread(target=consumer, daemon=True)
-consumer_thread.start()
+# consumer_thread = threading.Thread(target=consumer, daemon=True)
+# consumer_thread.start()

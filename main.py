@@ -2,7 +2,6 @@ from utils.entry_point import EntryPoint
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import (
-    ocr_routes,
     stream_routes
 )
 from settings.swagger_doc import (
@@ -26,7 +25,6 @@ app.add_middleware(
 )
 
 #Routers
-app.router.include_router(ocr_routes.router)
 app.router.include_router(stream_routes.router)
 
 if __name__ == "__main__":

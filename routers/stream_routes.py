@@ -1,9 +1,7 @@
-import threading
 import cv2
 from fastapi import APIRouter
-from fastapi.responses import StreamingResponse, JSONResponse
-from services.camera_stream_configurator import CameraStreamConfigurator
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from fastapi.responses import StreamingResponse
+from aiortc import RTCPeerConnection
 from services.VideoStreamTrack import VideoStreamTrack
 from settings.swagger_doc import (
     STREAM_TAGS
@@ -14,14 +12,6 @@ from ai_pipeline.main import frame_queue, new_item_event
 router = APIRouter(
     tags=STREAM_TAGS
 )
-
-# @router.get(
-#     path="/stream"
-# )
-# async def stream():
-#     camera_object.stream_flag = True
-#     camera_object.run_streaming_in_thread(resized_width=640 ,resized_height=480)
-#     return StreamingResponse(frames_consumer(camera_object), media_type='multipart/x-mixed-replace; boundary=frame')
 
 @router.get(
     path="/video_feed"

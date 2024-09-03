@@ -6,6 +6,7 @@ class VideoStreamTrack(MediaStreamTrack):
     def __init__(self):
         super().__init__()        
         self.cap = cv2.VideoCapture(0)
+        self.kind = "video"
 
     async def recv(self):
         ret, frame = self.cap.read()

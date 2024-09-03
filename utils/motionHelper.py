@@ -5,10 +5,15 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import sys
+from Config import MOTION_THRESH
+from utils.polygonHelper import PolygonHelper
 
 # Append the current script directory to the system path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(script_dir)
+
+LOG_FOLDER_PATH = 'runtimeLog/dynamicROI'
+polyHelper = PolygonHelper()
 
 class MotionDetection:
     def __init__(self, queue_len=10, max_workers=5, buffer = 3):
@@ -23,11 +28,9 @@ class MotionDetection:
         self.motion = False
         self.frameQueue = deque(maxlen=queue_len)
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.threshold = 0.98
+        self.threshold = MOTION_THRESH
         self.buffer = buffer
         self.count = 0
-        self.prev_motion_status = False
-        self.current_motion_status = False
 
     def motionDetect(self, frame1, frame2, log=False):
         """
@@ -55,10 +58,10 @@ class MotionDetection:
                 self.count = 0
 
             if self.count != 0 and self.count % self.buffer ==0:
-                self.current_motion_status = True 
+                self.motion = True 
 
             else:
-                self.current_motion_status = False 
+                self.motion = False 
                 
         except Exception as e:
             logging.error(f"Motion detection failed due to: {e}")
@@ -71,7 +74,6 @@ class MotionDetection:
         Parameters:
             frame (np.ndarray): New frame to update motion detection.
         """
-        self.prev_motion_status = self.current_motion_status
         self.frameQueue.append(frame)
         if len(self.frameQueue) > 1:
             self.executor.submit(self.motionDetect, self.frameQueue[-1], self.frameQueue[-2])
@@ -96,3 +98,28 @@ class MotionDetection:
             new_threshold (float): New threshold value.
         """
         self.threshold = new_threshold
+
+    def getMotionROI(self, frame, mask, default_mask, polygon):
+        """
+        Get the Region of Interest (ROI) for motion detection.
+        
+        Parameters:
+            frame (np.ndarray): Current frame.
+            mask (np.ndarray): Mask for the current frame.
+            default_mask (np.ndarray): Default mask.
+            polygon (list): List of polygon coordinates.
+        
+        Returns:
+            tuple: ROI frame and current mask.
+        """
+        if polyHelper.check_seg_in_roi(mask, polygon):
+            binary_mask = cv2.bitwise_or(default_mask, mask)
+            cv2.imwrite(f'{LOG_FOLDER_PATH}/joined_mask.jpg', binary_mask)
+            roi_frame = cv2.bitwise_and(frame, frame, mask=binary_mask)
+            current_mask = binary_mask
+            cv2.imwrite(f'{LOG_FOLDER_PATH}/initial_mask.jpg', current_mask)
+        else:
+            roi_frame = cv2.bitwise_and(frame, frame, mask=default_mask)
+            current_mask = default_mask
+
+        return roi_frame, current_mask

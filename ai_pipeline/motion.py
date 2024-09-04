@@ -10,9 +10,8 @@ import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(script_dir)
 
-
 class MotionDetection:
-    def __init__(self, queue_len=10, max_workers=5, buffer = 3):
+    def __init__(self, queue_len=10, max_workers=1, buffer = 3):
         """
         Initialize the MotionDetection class.
         
@@ -21,16 +20,16 @@ class MotionDetection:
             max_workers (int): Maximum number of worker threads.
         """
         self.motionValue = 1000
-        self.motion = False
         self.frameQueue = deque(maxlen=queue_len)
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.threshold = 0.99
+        self.threshold = 0.95
         self.buffer = buffer
         self.count = 0
-        self.current_motion_status = False 
+        self.prev_motion_status = False
+        self.current_motion_status = False
         self.motion_check_count = 0
 
-    def motionDetect(self, frame1, frame2, log=False):
+    def motion_detect(self, frame1, frame2, log=False):
         """
         Detect motion by comparing two frames using Structural Similarity Index (SSIM).
         
@@ -46,43 +45,36 @@ class MotionDetection:
             ssim_index, _ = ssim(gray_frame1, gray_frame2, full=True)
             self.motionValue = ssim_index
             if log:
-                logging.info(f"Similarity Index: {ssim_index}")
-
+                print(f"Similarity Index: {ssim_index}")
+                # logging.info(f"Similarity Index: {ssim_index}")
 
             motion_status = ssim_index < self.threshold
+
             if motion_status == True:
                 self.motion_check_count+=1 
                 # print(self.motion_check_count)
                 if self.motion_check_count > 3:
-                    self.motion = True 
+                    self.current_motion_status = True 
             
             else:
-                self.motion = False 
+                self.current_motion_status = False 
                 self.motion_check_count = 0 
             # print(ssim_index)
-            print(f'Final Motion Status: {self.motion}')
+            # print(f'Final Motion Status: {self.motion}')
                 
         except Exception as e:
             logging.error(f"Motion detection failed due to: {e}")
             raise e
 
-    def motionCalibration(self, frame):
+    def motionUpdate(self, frame):
         """
-        Calibrate the motion detection threshold using a new frame.
+        Update the motion detection with a new frame.
         
         Parameters:
-            frame (np.ndarray): New frame for calibration.
+            frame (np.ndarray): New frame to update motion detection.
         """
-        print("########### Don't perform any motion in the rack ###################")
-        self.motionUpdate(frame)
-        if self.motionValue < self.threshold:
-            self.threshold = self.motionValue
-
-    def updateThreshold(self, new_threshold):
-        """
-        Update the motion detection threshold.
-        
-        Parameters:
-            new_threshold (float): New threshold value.
-        """
-        self.threshold = new_threshold
+        self.prev_motion_status = self.current_motion_status
+        self.frameQueue.append(frame)
+        if len(self.frameQueue) > 1:
+            self.motion_detect(self.frameQueue.popleft(), self.frameQueue.popleft(), False)
+            # self.executor.submit(self.motion_detect, self.frameQueue.popleft(), self.frameQueue.popleft())

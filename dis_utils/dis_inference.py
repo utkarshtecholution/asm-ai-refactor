@@ -16,7 +16,7 @@ import random
 from data_loader_cache import normalize, im_preprocess
 from models import ISNetDIS
 from utils.maskHelper import MaskImage
-from rlef_utils import send_to_rlef
+# from rlef_utils import send_to_rlef
 
 # Global variables
 hypar = {}

@@ -6,7 +6,7 @@ from aiortc import RTCPeerConnection
 from services.VideoStreamTrack import VideoStreamTrack
 from settings.swagger_doc import STREAM_TAGS
 from Config import STREAMING_FRAME_SIZE
-from ai_pipeline.main import frame_queue, new_item_event
+from ai_pipeline.consumer import frame_queue, new_item_event
 
 router = APIRouter(tags=STREAM_TAGS)
 
@@ -25,11 +25,11 @@ async def video_feed():
                 frame = await video_track.recv()
                 if frame is None:
                     break
-                frame_queue.append(frame)
+                low_res_frame = cv2.resize(frame, STREAMING_FRAME_SIZE, cv2.INTER_CUBIC)
+                frame_queue.append((frame, low_res_frame))
                 new_item_event.set() # Signal that a new item is available
-                stream_frame = cv2.resize(frame, STREAMING_FRAME_SIZE, cv2.INTER_CUBIC)
 
-                ret, buffer = cv2.imencode(".jpg", stream_frame)
+                ret, buffer = cv2.imencode(".jpg", low_res_frame)
                 if not ret:
                     continue
                 try:

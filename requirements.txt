@@ -30,4 +30,4 @@ pandas
 ultralytics 
 sentence-transformers 
 open-clip-torch
-
+imutils

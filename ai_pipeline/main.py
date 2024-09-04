@@ -1,37 +1,41 @@
-from collections import deque
-import threading
-from ai_pipeline.motion import MotionDetection
 from ai_pipeline.angleCorrection import process_image_ocr
-import cv2
+from ai_pipeline.DISegmention import dis_object_seg
+from ai_pipeline.angleCorrection import angle_correction
+from ai_pipeline.image_crop import crop_oriented_bbox_image
+from ai_pipeline.OCR_inference import text_ocr_process_single_image, remove_unwanted_text
 
-# creating an frame queue for inserting realtime frames
-frame_queue = deque(maxlen=5)
+def main(high_res_frame, low_res_frame):
 
-new_item_event = threading.Event()
+    # Getting mask of segments of Object using DIS Model
+    low_res_mask = dis_object_seg(low_res_frame)
+    if low_res_mask is None:
+        return
+    
+    # Angle Prediction from the mask and returns label detection results
+    results = angle_correction(high_res_frame, low_res_mask)
 
-def consumer():
-    # Motion Detection
-    motion_detector = MotionDetection()
-    skip_frame = 3
-    current_frame_count = 0
-    while True:
-        new_item_event.wait()  # Wait until the event is set
-        while frame_queue:
-            frame = frame_queue.popleft()
-            current_frame_count += 1
+    # Croping images
+    final_result = {}
+    for segment in results:
+        crop_img_path = crop_oriented_bbox_image(image = high_res_frame, bbox = segment['xyxy'], angle = None,  
+                                                            oriented_box= segment['obb'], save_image= True)
+        
+        ocr_text = text_ocr_process_single_image(crop_img_path, segment['clss'])
+        ocr_text = remove_unwanted_text(segment['clss'], ocr_text)
 
-            # Feeding every 3rd frame for checking motion dectection 
-            if current_frame_count%skip_frame==0:
-                resized_frame = cv2.resize(frame, (640, 480), cv2.INTER_CUBIC)
-                motion_detector.motionUpdate(resized_frame)
+        if segment['clss'] in final_result:
+            if len(final_result['clss'])>len(ocr_text):
+                final_result['clss']['text'] = ocr_text
+                final_result['clss']['conf'] = segment["conf"]
 
-            if motion_detector.prev_motion_status == True and motion_detector.current_motion_status == False:
-                print("Motion stopped")
-                # TODO: Need to have a 3-5 frame buffer for finding best frame
-                # process_image_ocr(frame)
+        else:
+            final_result[segment['clss']] = {
+                "type": segment['clss'],
+                "text" : ocr_text,
+                "conf" : segment["conf"]
+            }
 
-            print("consumed...")
-        new_item_event.clear()  # Clear the event when queue is empty
-
-consumer_thread = threading.Thread(target=consumer, daemon=True)
-consumer_thread.start()
+    return final_result    
+        
+if __name__=="__main__":
+    main()

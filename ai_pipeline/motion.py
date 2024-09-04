@@ -10,6 +10,7 @@ import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(script_dir)
 
+
 class MotionDetection:
     def __init__(self, queue_len=10, max_workers=5, buffer = 3):
         """
@@ -23,11 +24,11 @@ class MotionDetection:
         self.motion = False
         self.frameQueue = deque(maxlen=queue_len)
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.threshold = 0.98
+        self.threshold = 0.99
         self.buffer = buffer
         self.count = 0
-        self.prev_motion_status = False
-        self.current_motion_status = False
+        self.current_motion_status = False 
+        self.motion_check_count = 0
 
     def motionDetect(self, frame1, frame2, log=False):
         """
@@ -47,34 +48,23 @@ class MotionDetection:
             if log:
                 logging.info(f"Similarity Index: {ssim_index}")
 
+
             motion_status = ssim_index < self.threshold
-
-            if motion_status is True: 
-                self.count +=1 
+            if motion_status == True:
+                self.motion_check_count+=1 
+                # print(self.motion_check_count)
+                if self.motion_check_count > 3:
+                    self.motion = True 
+            
             else:
-                self.count = 0
-
-            if self.count != 0 and self.count % self.buffer ==0:
-                self.current_motion_status = True 
-
-            else:
-                self.current_motion_status = False 
+                self.motion = False 
+                self.motion_check_count = 0 
+            # print(ssim_index)
+            print(f'Final Motion Status: {self.motion}')
                 
         except Exception as e:
             logging.error(f"Motion detection failed due to: {e}")
             raise e
-
-    def motionUpdate(self, frame):
-        """
-        Update the motion detection with a new frame.
-        
-        Parameters:
-            frame (np.ndarray): New frame to update motion detection.
-        """
-        self.prev_motion_status = self.current_motion_status
-        self.frameQueue.append(frame)
-        if len(self.frameQueue) > 1:
-            self.executor.submit(self.motionDetect, self.frameQueue[-1], self.frameQueue[-2])
 
     def motionCalibration(self, frame):
         """

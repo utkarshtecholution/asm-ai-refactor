@@ -28,7 +28,7 @@ def consumer():
             if motion_detector.prev_motion_status == True and motion_detector.current_motion_status == False:
                 print("Motion stopped")
                 # TODO: Need to have a 3-5 frame buffer for finding best frame
-                process_image_ocr(frame)
+                # process_image_ocr(frame)
 
             print("consumed...")
         new_item_event.clear()  # Clear the event when queue is empty

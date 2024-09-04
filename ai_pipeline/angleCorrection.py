@@ -19,7 +19,6 @@ threads_executor = ThreadPoolExecutor(max_workers=5)
 mask_helper = maskHelper.MaskImage()
 angle_correction = angle_correction_helper.ImageOrientationCorrection()
 
-
 def get_best_rotated_image(image, mask, possible_angles):
     """
         image: np.array 
@@ -44,8 +43,6 @@ def get_best_rotated_image(image, mask, possible_angles):
         rotated_mask = imutils.rotate_bound(mask, angle)
         text_decoder.yolo_obb_inference(queue_object= results_queue, save_img= True, image = rotated_image, mask = rotated_mask, resize=True)
         
-
-        
     for idx in range(len(possible_angles)):
         try:
             result = results_queue.get_nowait()
@@ -62,7 +59,6 @@ def get_best_rotated_image(image, mask, possible_angles):
             best_results = len(result['yolo_results'])
 
     return best_image, best_mask 
-
 
 def process_image_ocr(high_res_frame):
     """

@@ -24,7 +24,7 @@ def consumer():
             if current_frame_count%skip_frame==0:
                 resized_frame = cv2.resize(frame, (640, 480), cv2.INTER_CUBIC)
                 motion_detector.motionUpdate(resized_frame)
-            
+
             if motion_detector.prev_motion_status == True and motion_detector.current_motion_status == False:
                 print("Motion stopped")
                 # TODO: Need to have a 3-5 frame buffer for finding best frame
